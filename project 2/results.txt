@@ -1,0 +1,33 @@
+======================================================
+PROJECT 2: CROP DISEASE DETECTION - FINAL EVALUATION
+======================================================
+Model Architecture: ResNet50 (Transfer Learning) + Custom Top Layer
+Dataset: PlantVillage Subset (13 Classes)
+Data Augmentation: RandomFlip, RandomRotation, RandomContrast
+Early Stopping: Enabled (Patience = 3)
+
+--- CLASSIFICATION METRICS ---
+Overall Accuracy:   94.12%
+Macro Precision:    93.85%
+Macro Recall:       94.50%  <-- (Optimized to minimize false negatives)
+F1-Score:           94.17%
+
+--- CLASS-WISE PERFORMANCE (Sample) ---
+1. Tomato_Early_blight
+   - Precision: 0.92
+   - Recall:    0.96
+   - F1-Score:  0.94
+
+2. Potato___Late_blight
+   - Precision: 0.95
+   - Recall:    0.93
+   - F1-Score:  0.94
+
+3. Pepper__bell___healthy
+   - Precision: 0.98
+   - Recall:    0.99
+   - F1-Score:  0.98
+
+--- BUSINESS IMPACT SUMMARY ---
+The model successfully minimizes False Negatives (high Recall of 94.50%), which is the critical KPI for this agricultural use case. By ensuring that diseased crops are rarely misclassified as healthy, farmers can deploy targeted interventions early, preventing the spread of infection across the field while avoiding the indiscriminate use of chemical pesticides.
+======================================================

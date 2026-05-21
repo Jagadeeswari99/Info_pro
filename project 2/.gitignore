@@ -1,0 +1,19 @@
+# Data and Models
+data/
+raw_images/
+dataset/
+PlantVillage/
+*.h5
+*.keras
+*.pkl
+*.pb
+saved_model/
+
+# Environments
+.env
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
