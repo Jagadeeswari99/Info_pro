@@ -1,0 +1,11 @@
+menu_item,model,MAE,RMSE
+Chicken Biryani,Linear Regression,65.451,291.679
+Chicken Biryani,XGBoost,16.08,22.431
+Grilled Fish,Linear Regression,33.306,144.227
+Grilled Fish,XGBoost,7.487,9.493
+Masala Dosa,Linear Regression,61.106,257.877
+Masala Dosa,XGBoost,13.023,17.094
+Paneer Butter Masala,Linear Regression,57.154,256.881
+Paneer Butter Masala,XGBoost,7.693,13.717
+Veg Fried Rice,Linear Regression,61.61,275.022
+Veg Fried Rice,XGBoost,14.04,19.08
