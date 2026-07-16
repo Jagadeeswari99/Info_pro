@@ -1,0 +1,16 @@
+items:
+  Chicken Biryani:
+    lead_time_days: 3
+    safety_buffer: 15
+  Paneer Butter Masala:
+    lead_time_days: 2
+    safety_buffer: 10
+  Veg Fried Rice:
+    lead_time_days: 2
+    safety_buffer: 12
+  Masala Dosa:
+    lead_time_days: 2
+    safety_buffer: 10
+  Grilled Fish:
+    lead_time_days: 3
+    safety_buffer: 12

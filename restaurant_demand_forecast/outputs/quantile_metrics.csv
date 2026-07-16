@@ -1,0 +1,16 @@
+menu_item,quantile,pinball_loss,mae
+Chicken Biryani,0.1,2.824,25.878
+Chicken Biryani,0.5,8.0302,16.06
+Chicken Biryani,0.9,6.3705,16.281
+Grilled Fish,0.1,1.6758,13.36
+Grilled Fish,0.5,3.8758,7.752
+Grilled Fish,0.9,3.3378,8.789
+Masala Dosa,0.1,3.2412,25.329
+Masala Dosa,0.5,7.9127,15.825
+Masala Dosa,0.9,4.0789,15.536
+Paneer Butter Masala,0.1,2.0744,14.892
+Paneer Butter Masala,0.5,3.9624,7.925
+Paneer Butter Masala,0.9,3.28,10.457
+Veg Fried Rice,0.1,2.8714,25.949
+Veg Fried Rice,0.5,7.2323,14.465
+Veg Fried Rice,0.9,7.1104,13.885

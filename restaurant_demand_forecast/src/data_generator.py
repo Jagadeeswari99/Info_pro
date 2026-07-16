@@ -4,9 +4,13 @@ Generates synthetic restaurant POS sales data for demand forecasting.
 Simulates realistic patterns: weekday/weekend spikes, seasonality, holidays, trends.
 """
 
+from pathlib import Path
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_PATH = BASE_DIR / "data" / "pos_sales_raw.csv"
 
 def generate_pos_data(
     start_date="2023-01-01",
@@ -106,6 +110,7 @@ def generate_pos_data(
 
 if __name__ == "__main__":
     df = generate_pos_data()
-    df.to_csv("/home/claude/restaurant_demand_forecast/data/pos_sales_raw.csv", index=False)
+    DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(DATA_PATH, index=False)
     print(f"Generated {len(df)} records across {df['menu_item'].nunique()} menu items.")
     print(df.head(10))

@@ -1,141 +1,148 @@
-# Project 3: AI Demand Forecasting & Inventory Optimization
-**Infotact Technical Internship Program — Food & Restaurant Services**
+# FreshFlow — AI Demand & Inventory Intelligence
 
----
+FreshFlow is a prototype restaurant-demand forecasting and inventory-planning system. It starts from synthetic daily POS sales data, adds weather and event signals, trains quantile forecasting models, explains predictions with SHAP, flags anomalies, and produces inventory reorder suggestions.
 
-## Overview
-AI-powered demand forecasting for a restaurant chain using 2 years of synthetic POS data.
-Models predict daily units sold per menu item, enabling proactive inventory management and
-reduction of food waste.
+## What this project is actually doing
 
-**Tech Stack:** Python · Pandas · NumPy · Scikit-Learn · XGBoost · Prophet · Matplotlib · Plotly
+This repository is doing five jobs at once:
 
----
+1. Synthetic data generation
+   - The project creates realistic daily restaurant sales records for five menu items using the script in [src/data_generator.py](src/data_generator.py).
+   - The generated data includes date, menu item, units sold, revenue, holiday flags, weekday/weekend indicators, and calendar features.
 
-## Project Structure
+2. Feature engineering
+   - The original pipeline in [src/feature_engineering.py](src/feature_engineering.py) builds lag features, rolling averages, and calendar features.
+   - The upgraded pipeline in [src/feature_engineering_v2.py](src/feature_engineering_v2.py) extends this with real weather data, event flags, and event multipliers.
+
+3. Forecasting
+   - The original point-forecast training in [src/train_models.py](src/train_models.py) trains baseline linear regression and XGBoost models.
+   - The new quantile workflow in [src/train_quantile_models.py](src/train_quantile_models.py) trains XGBoost quantile models for the 10th, 50th, and 90th percentiles.
+   - Those quantiles allow the system to predict a range instead of one single number.
+
+4. Explainability and monitoring
+   - [src/explain.py](src/explain.py) uses SHAP to explain why a P50 prediction was made for a selected date.
+   - [src/anomaly.py](src/anomaly.py) compares actual values against the P10–P90 band and flags days that fall outside it.
+
+5. Inventory decisions
+   - [src/inventory_optimizer.py](src/inventory_optimizer.py) uses a simple safety-stock formula to recommend how much stock to reorder.
+   - The configuration file [config.yaml](config.yaml) stores lead times and safety buffers per item.
+
+## Architecture
+
+```text
++-------------------+        +---------------------+
+| Synthetic POS     |        | Real weather data   |
+| data generator    |        | + events calendar   |
++--------+----------+        +----------+------+
+         |                               |
+         v                               v
++----------------------+      +------------------------+
+| Feature engineering |      | Quantile model training|
+| lag / rolling /     |      | P10 / P50 / P90        |
+| weather / events    |      +-----------+------------+
++----------+-------------------------------+            |
+           |                                           |
+           v                                           v
++--------------------+                      +---------------------+
+| FastAPI service    |                      | SHAP / anomaly /   |
+| /forecast /metrics|                      | inventory modules  |
++---------+----------+                      +----------+----------+
+          |                                           |
+          v                                           v
++--------------------+                      +---------------------+
+| Streamlit dashboard|                      | Outputs / artifacts |
+| forecast / reorder |                      | CSVs, PNGs, models |
++--------------------+                      +---------------------+
 ```
-restaurant_demand_forecast/
-├── data/
-│   └── pos_sales_raw.csv          # Synthetic POS data (not tracked in git — see .gitignore)
-├── notebooks/
-│   └── demand_forecasting_project.ipynb   # Full EDA + modeling notebook (4 weeks)
-├── src/
-│   ├── data_generator.py          # Synthetic POS data generator
-│   ├── feature_engineering.py     # Lag features, rolling stats, cyclic encoding
-│   └── train_models.py            # LR + XGBoost + Prophet training pipeline
-├── models/                        # Saved model weights (not tracked in git)
-├── outputs/
-│   ├── model_metrics.csv          # MAE / RMSE comparison
-│   └── forecasts.json             # Per-item predictions for visualization
-└── README.md
-```
 
----
+## Current scope and honesty note
 
-## Results
+This is an offline prototype, not a live operational pilot.
 
-| Menu Item | LR MAE | XGBoost MAE | Improvement |
-|---|---|---|---|
-| Chicken Biryani | 65.5 | 16.1 | **75%** |
-| Masala Dosa | 61.1 | 13.0 | **79%** |
-| Paneer Butter Masala | 57.2 | 7.7 | **87%** |
-| Veg Fried Rice | 61.6 | 14.0 | **77%** |
-| Grilled Fish | 33.3 | 7.5 | **77%** |
-| **Average** | **55.7** | **11.7** | **~79%** |
+- The base sales data is synthetic.
+- The weather data is real from Open-Meteo, but the event calendar is manually curated.
+- The evaluation is offline and should be interpreted as a demonstration of the workflow rather than a deployed business system.
+- Calibration percentages are reported as measured from the available test window, not as a guarantee of live accuracy.
 
-**Top predictive features (XGBoost):** `day_of_week` (19–31%), `is_holiday` (12–20%), `lag_7`, `rolling_mean_7`, `ewm_14`
+## What is produced
 
----
+The project writes the following outputs:
 
-## Weekly Roadmap & GitHub Commit Guide
+- [data/weather_real.csv](data/weather_real.csv): real weather data fetched from Open-Meteo
+- [data/events_calendar.csv](data/events_calendar.csv): curated event multipliers
+- [outputs/quantile_metrics.csv](outputs/quantile_metrics.csv): pinball loss by item and quantile
+- [outputs/anomalies.csv](outputs/anomalies.csv): flagged anomalous days
+- [outputs/shap_plots](outputs/shap_plots): example SHAP plots
+- [models](models): saved quantile models and legacy point-forecast models
 
-### Week 1 — Data Ingestion & Time-Series EDA
+## How to run in Codespaces
+
+### Option 1: one-command startup
+From the project folder:
+
 ```bash
-git checkout -b week1/data-eda
-# Day 1
-git add src/data_generator.py
-git commit -m "data-clean: add synthetic POS data generator with weekly/seasonal patterns"
-# Day 2
-git add notebooks/demand_forecasting_project.ipynb
-git commit -m "eda: plot overall sales trend and 30-day rolling mean"
-# Day 3
-git commit -m "eda: weekly seasonality bar chart — fri/sat spike confirmed"
-# Day 4
-git commit -m "eda: monthly heatmap showing oct-dec festive uplift"
-# Day 5
-git commit -m "eda: seasonal decomposition and autocorrelation analysis (lag-7 pattern)"
-git checkout main && git merge week1/data-eda
+chmod +x run_freshflow.sh
+./run_freshflow.sh
 ```
 
-### Week 2 — Advanced Feature Engineering
+This will:
+
+1. install requirements
+2. generate synthetic sales data
+3. build engineered features
+4. train quantile models
+5. generate explainability and anomaly outputs
+6. start the API and dashboard
+
+Then open:
+
+- API docs: http://127.0.0.1:8000/docs
+- Dashboard: http://127.0.0.1:8501
+
+### Option 2: manual steps
+
 ```bash
-git checkout -b week2/feature-engineering
-git commit -m "feature-eng: add lag features (1,3,7,14,21,28 days)"
-git commit -m "feature-eng: rolling window stats — mean/std/max at 7,14,30 day windows"
-git commit -m "feature-eng: cyclic encoding for day_of_week and month"
-git commit -m "feature-eng: sequential train/test split (no data leakage) — 10mo/2mo"
-git commit -m "eda: feature-target correlation plot — lag_7 and rolling_mean_7 strongest"
-git checkout main && git merge week2/feature-engineering
-```
-
-### Week 3 — Model Training & Selection
-```bash
-git checkout -b week3/modeling
-git commit -m "model-tuning: baseline linear regression — avg MAE 55.7 units"
-git commit -m "model-tuning: XGBoost with TimeSeriesSplit CV hyperparameter search"
-git commit -m "model-tuning: best XGBoost params n_estimators=300 depth=5 lr=0.03"
-git commit -m "model-tuning: XGBoost avg MAE 11.7 — 79% improvement over baseline"
-git commit -m "model-tuning: Prophet additive model with multiplicative seasonality"
-git checkout main && git merge week3/modeling
-```
-
-### Week 4 — Evaluation & Business Reporting
-```bash
-git checkout -b week4/evaluation
-git commit -m "eval: MAE/RMSE comparison table across all 5 menu items"
-git commit -m "eval: forecast vs actual line chart for test period"
-git commit -m "eval: residual distribution and scatter analysis"
-git commit -m "eval: XGBoost feature importance — day_of_week top driver (19-31%)"
-git commit -m "eval: business summary report with inventory recommendations"
-git checkout main && git merge week4/evaluation
-```
-
----
-
-## .gitignore
-```
-data/pos_sales_raw.csv
-models/*.pkl
-models/*.h5
-outputs/forecasts.json
-*.env
-.env
-__pycache__/
-.ipynb_checkpoints/
-```
-
----
-
-## Key Business Insights
-1. **day_of_week** is the single strongest predictor — Friday/Saturday demand is 30–60% above weekday average.
-2. **is_holiday** explains sudden spikes — holiday uplift of 40–80% captured accurately.
-3. **lag_7 and rolling_mean_7** capture weekly demand cycles better than raw date features.
-4. XGBoost reduces average MAE from **55.7 → 11.7 units** (79% improvement).
-5. With 11.7 unit average error, restaurant managers can confidently plan weekly orders.
-
----
-
-## How to Run
-```bash
-# 1. Install dependencies
 pip install -r requirements.txt
-
-# 2. Generate synthetic data
 python src/data_generator.py
-
-# 3. Train all models
-python src/train_models.py
-
-# 4. Open notebook for full analysis
-jupyter notebook notebooks/demand_forecasting_project.ipynb
+python src/feature_engineering_v2.py
+python src/train_quantile_models.py
+python src/explain.py
+python src/anomaly.py
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
+
+In another terminal:
+
+```bash
+python -m streamlit run dashboard/app.py --server.headless true --server.port 8501
+```
+
+## Project layout
+
+```text
+restaurant_demand_forecast/
+├── api/                  # FastAPI application
+├── dashboard/            # Streamlit UI
+├── data/                 # input CSV files and fetched weather data
+├── models/               # trained model artifacts
+├── notebooks/            # notebook workspace
+├── outputs/              # quantile metrics, anomalies, SHAP plots
+├── src/                  # data generation, feature engineering, training, explainability, anomaly, inventory logic
+├── config.yaml           # per-item reorder parameters
+├── requirements.txt      # Python dependencies
+├── run_freshflow.sh      # one-command startup helper
+└── README.md             # this document
+```
+
+## Portfolio framing
+
+This project is a strong portfolio piece because it demonstrates a full machine-learning workflow:
+
+- data generation
+- feature engineering
+- forecasting under uncertainty
+- explainable AI
+- anomaly detection
+- operational decision support
+
+It is especially suitable for showing how a forecasting system can move from a single-point prediction to a decision-support tool for inventory planning.

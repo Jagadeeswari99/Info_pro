@@ -10,6 +10,7 @@ Trains 3 models per menu item:
 Saves results and metrics to /outputs/
 """
 
+from pathlib import Path
 import pandas as pd
 import numpy as np
 import pickle, json, os, warnings
@@ -22,13 +23,15 @@ from xgboost import XGBRegressor
 from prophet import Prophet
 
 import sys
-sys.path.insert(0, "/home/claude/restaurant_demand_forecast/src")
+BASE_DIR = Path(__file__).resolve().parents[1]
+SRC_DIR = BASE_DIR / "src"
+sys.path.insert(0, str(SRC_DIR))
 from feature_engineering import engineer_features, sequential_split, FEATURE_COLS, TARGET_COL
 
-OUTPUT_DIR = "/home/claude/restaurant_demand_forecast/outputs"
-MODEL_DIR  = "/home/claude/restaurant_demand_forecast/models"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(MODEL_DIR, exist_ok=True)
+OUTPUT_DIR = BASE_DIR / "outputs"
+MODEL_DIR = BASE_DIR / "models"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def rmse(y_true, y_pred):
@@ -112,8 +115,7 @@ def train_prophet(train_df, test_df):
 
 
 def train_all_items():
-    df = pd.read_csv("/home/claude/restaurant_demand_forecast/data/pos_sales_raw.csv",
-                     parse_dates=["date"])
+    df = pd.read_csv(BASE_DIR / "data" / "pos_sales_raw.csv", parse_dates=["date"])
 
     all_results   = []
     all_forecasts = {}
@@ -161,9 +163,9 @@ def train_all_items():
 
         # ── Save models ────────────────────────────────────────────────────
         item_key = item.replace(" ", "_")
-        with open(f"{MODEL_DIR}/{item_key}_xgb.pkl", "wb") as f:
+        with open(MODEL_DIR / f"{item_key}_xgb.pkl", "wb") as f:
             pickle.dump(xgb, f)
-        with open(f"{MODEL_DIR}/{item_key}_lr.pkl", "wb") as f:
+        with open(MODEL_DIR / f"{item_key}_lr.pkl", "wb") as f:
             pickle.dump(lr, f)
 
         # ── Store results ──────────────────────────────────────────────────
@@ -181,17 +183,17 @@ def train_all_items():
         }
 
     results_df = pd.DataFrame(all_results)
-    results_df.to_csv(f"{OUTPUT_DIR}/model_metrics.csv", index=False)
+    results_df.to_csv(OUTPUT_DIR / "model_metrics.csv", index=False)
 
-    with open(f"{OUTPUT_DIR}/forecasts.json", "w") as f:
+    with open(OUTPUT_DIR / "forecasts.json", "w") as f:
         json.dump(all_forecasts, f, indent=2)
 
     print(f"\n\n{'='*55}")
     print("FINAL RESULTS SUMMARY")
     print(f"{'='*55}")
     print(results_df.to_string(index=False))
-    print(f"\nSaved metrics → {OUTPUT_DIR}/model_metrics.csv")
-    print(f"Saved forecasts → {OUTPUT_DIR}/forecasts.json")
+    print(f"\nSaved metrics → {OUTPUT_DIR / 'model_metrics.csv'}")
+    print(f"Saved forecasts → {OUTPUT_DIR / 'forecasts.json'}")
     return results_df, all_forecasts
 
 

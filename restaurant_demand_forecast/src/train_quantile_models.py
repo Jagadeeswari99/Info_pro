@@ -1,0 +1,91 @@
+from pathlib import Path
+import pickle
+import warnings
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error
+from xgboost import XGBRegressor
+
+warnings.filterwarnings("ignore")
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_PATH = BASE_DIR / "data" / "pos_sales_raw.csv"
+MODEL_DIR = BASE_DIR / "models"
+OUTPUT_DIR = BASE_DIR / "outputs"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+try:
+    from src.feature_engineering_v2 import engineer_features_v2, FEATURE_COLS_V2
+    from src.feature_engineering import sequential_split
+except ModuleNotFoundError:  # pragma: no cover
+    from feature_engineering_v2 import engineer_features_v2, FEATURE_COLS_V2
+    from feature_engineering import sequential_split
+
+
+def pinball_loss(y_true, y_pred, quantile):
+    errors = y_true - y_pred
+    return np.mean(np.maximum(quantile * errors, (quantile - 1) * errors))
+
+
+def build_quantile_models():
+    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
+    weather = pd.read_csv(BASE_DIR / "data" / "weather_real.csv", parse_dates=["date"])
+    events = pd.read_csv(BASE_DIR / "data" / "events_calendar.csv", parse_dates=["date"])
+
+    rows = []
+    for item in df["menu_item"].unique():
+        feat_df = engineer_features_v2(df, item, weather=weather, events=events)
+        train, test = sequential_split(feat_df, test_months=2)
+        X_train = train[FEATURE_COLS_V2]
+        y_train = train["units_sold"]
+        X_test = test[FEATURE_COLS_V2]
+        y_test = test["units_sold"]
+
+        for quantile in [0.1, 0.5, 0.9]:
+            model = XGBRegressor(
+                objective="reg:quantileerror",
+                quantile_alpha=quantile,
+                n_estimators=250,
+                max_depth=5,
+                learning_rate=0.05,
+                subsample=0.9,
+                random_state=42,
+                tree_method="hist",
+                verbosity=0,
+            )
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test).clip(min=0)
+            loss = pinball_loss(y_test, preds, quantile)
+            rows.append({
+                "menu_item": item,
+                "quantile": quantile,
+                "pinball_loss": round(float(loss), 4),
+                "mae": round(float(mean_absolute_error(y_test, preds)), 3),
+            })
+
+            item_key = item.replace(" ", "_")
+            quantile_suffix = {0.1: "q10", 0.5: "q50", 0.9: "q90"}[quantile]
+            with open(MODEL_DIR / f"{item_key}_{quantile_suffix}.pkl", "wb") as fh:
+                pickle.dump(model, fh)
+
+        item_key = item.replace(" ", "_")
+        p90_model_path = MODEL_DIR / f"{item_key}_q90.pkl"
+        p50_model_path = MODEL_DIR / f"{item_key}_q50.pkl"
+        if p90_model_path.exists() and p50_model_path.exists():
+            with open(p90_model_path, "rb") as fh:
+                p90_model = pickle.load(fh)
+            with open(p50_model_path, "rb") as fh:
+                p50_model = pickle.load(fh)
+            p90_pred = p90_model.predict(X_test).clip(min=0)
+            calibration = np.mean(y_test.values < p90_pred) * 100
+            print(f"{item}: P90 calibration = {calibration:.1f}% of actuals below P90")
+
+    metrics_df = pd.DataFrame(rows)
+    metrics_df.to_csv(OUTPUT_DIR / "quantile_metrics.csv", index=False)
+    print(metrics_df.to_string(index=False))
+    print(f"Saved quantile metrics to {OUTPUT_DIR / 'quantile_metrics.csv'}")
+
+
+if __name__ == "__main__":
+    build_quantile_models()

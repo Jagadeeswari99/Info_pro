@@ -7,8 +7,56 @@ Transforms raw POS data into ML-ready features:
 - Train/test sequential split (no data leakage)
 """
 
+from pathlib import Path
+
 import pandas as pd
 import numpy as np
+
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_PATH = BASE_DIR / "data" / "pos_sales_raw.csv"
+
+
+def add_chronological_features(ts: pd.DataFrame) -> pd.DataFrame:
+    ts["day_of_week"] = ts.index.dayofweek
+    ts["day_of_month"] = ts.index.day
+    ts["month"] = ts.index.month
+    ts["quarter"] = ts.index.quarter
+    ts["week_of_year"] = ts.index.isocalendar().week.astype(int)
+    ts["year"] = ts.index.year
+    ts["is_weekend"] = (ts.index.dayofweek >= 5).astype(int)
+    ts["is_month_start"] = ts.index.is_month_start.astype(int)
+    ts["is_month_end"] = ts.index.is_month_end.astype(int)
+
+    ts["dow_sin"] = np.sin(2 * np.pi * ts["day_of_week"] / 7)
+    ts["dow_cos"] = np.cos(2 * np.pi * ts["day_of_week"] / 7)
+    ts["month_sin"] = np.sin(2 * np.pi * ts["month"] / 12)
+    ts["month_cos"] = np.cos(2 * np.pi * ts["month"] / 12)
+    return ts
+
+
+def add_lag_features(ts: pd.DataFrame, lags=(1, 3, 7, 14, 21, 28)) -> pd.DataFrame:
+    for lag in lags:
+        ts[f"lag_{lag}"] = ts["units_sold"].shift(lag)
+    return ts
+
+
+def add_rolling_features(ts: pd.DataFrame, windows=(7, 14, 30)) -> pd.DataFrame:
+    for window in windows:
+        ts[f"rolling_mean_{window}"] = ts["units_sold"].shift(1).rolling(window=window, min_periods=1).mean()
+        ts[f"rolling_std_{window}"] = ts["units_sold"].shift(1).rolling(window=window, min_periods=1).std()
+        ts[f"rolling_max_{window}"] = ts["units_sold"].shift(1).rolling(window=window, min_periods=1).max()
+    return ts
+
+
+def add_base_features(ts: pd.DataFrame) -> pd.DataFrame:
+    ts = add_chronological_features(ts)
+    ts = add_lag_features(ts)
+    ts = add_rolling_features(ts)
+    ts["ewm_7"] = ts["units_sold"].shift(1).ewm(span=7, adjust=False).mean()
+    ts["ewm_14"] = ts["units_sold"].shift(1).ewm(span=14, adjust=False).mean()
+    ts["is_holiday"] = ts["is_holiday"].fillna(0).astype(int)
+    ts["trend"] = (ts.index - ts.index[0]).days
+    return ts
 
 
 def engineer_features(df: pd.DataFrame, item: str) -> pd.DataFrame:
@@ -24,58 +72,10 @@ def engineer_features(df: pd.DataFrame, item: str) -> pd.DataFrame:
     """
     ts = df[df["menu_item"] == item].copy()
     ts = ts.sort_values("date").set_index("date")
-    ts = ts.asfreq("D")  # Ensure daily frequency, fill gaps
-
-    # Handle any missing days
+    ts = ts.asfreq("D")
     ts["units_sold"] = ts["units_sold"].fillna(ts["units_sold"].rolling(7, min_periods=1).mean())
-
-    # ── Chronological Features ────────────────────────────────────────────────
-    ts["day_of_week"]   = ts.index.dayofweek         # 0=Mon, 6=Sun
-    ts["day_of_month"]  = ts.index.day
-    ts["month"]         = ts.index.month
-    ts["quarter"]       = ts.index.quarter
-    ts["week_of_year"]  = ts.index.isocalendar().week.astype(int)
-    ts["year"]          = ts.index.year
-    ts["is_weekend"]    = (ts.index.dayofweek >= 5).astype(int)
-    ts["is_month_start"]= ts.index.is_month_start.astype(int)
-    ts["is_month_end"]  = ts.index.is_month_end.astype(int)
-
-    # Day-of-week sine/cosine encoding (cyclic)
-    ts["dow_sin"] = np.sin(2 * np.pi * ts["day_of_week"] / 7)
-    ts["dow_cos"] = np.cos(2 * np.pi * ts["day_of_week"] / 7)
-    ts["month_sin"] = np.sin(2 * np.pi * ts["month"] / 12)
-    ts["month_cos"] = np.cos(2 * np.pi * ts["month"] / 12)
-
-    # ── Lag Features ─────────────────────────────────────────────────────────
-    for lag in [1, 3, 7, 14, 21, 28]:
-        ts[f"lag_{lag}"] = ts["units_sold"].shift(lag)
-
-    # ── Rolling Window Statistics ─────────────────────────────────────────────
-    for window in [7, 14, 30]:
-        ts[f"rolling_mean_{window}"] = (
-            ts["units_sold"].shift(1).rolling(window=window, min_periods=1).mean()
-        )
-        ts[f"rolling_std_{window}"] = (
-            ts["units_sold"].shift(1).rolling(window=window, min_periods=1).std()
-        )
-        ts[f"rolling_max_{window}"] = (
-            ts["units_sold"].shift(1).rolling(window=window, min_periods=1).max()
-        )
-
-    # ── Exponentially Weighted Mean ───────────────────────────────────────────
-    ts["ewm_7"]  = ts["units_sold"].shift(1).ewm(span=7, adjust=False).mean()
-    ts["ewm_14"] = ts["units_sold"].shift(1).ewm(span=14, adjust=False).mean()
-
-    # ── Holiday / External Feature ────────────────────────────────────────────
-    ts["is_holiday"] = ts["is_holiday"].fillna(0).astype(int)
-
-    # ── Trend (days since start) ───────────────────────────────────────────────
-    ts["trend"] = (ts.index - ts.index[0]).days
-
-    # Drop rows where lag/rolling features are NaN (first 28 days)
-    ts = ts.dropna()
-    ts = ts.reset_index()
-
+    ts = add_base_features(ts)
+    ts = ts.dropna().reset_index()
     return ts
 
 
@@ -86,7 +86,7 @@ def sequential_split(df: pd.DataFrame, test_months: int = 2):
     """
     split_date = df["date"].max() - pd.DateOffset(months=test_months)
     train = df[df["date"] <= split_date].copy()
-    test  = df[df["date"] >  split_date].copy()
+    test = df[df["date"] > split_date].copy()
     return train, test
 
 
@@ -105,8 +105,7 @@ TARGET_COL = "units_sold"
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("/home/claude/restaurant_demand_forecast/data/pos_sales_raw.csv",
-                     parse_dates=["date"])
+    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
     item = "Chicken Biryani"
     feat_df = engineer_features(df, item)
     print(f"Features for '{item}': {feat_df.shape}")

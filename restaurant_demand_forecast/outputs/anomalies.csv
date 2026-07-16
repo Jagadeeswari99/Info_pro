@@ -1,0 +1,153 @@
+date,item,actual,p10,p90,flagged
+2024-11-01,Chicken Biryani,263,120,159,True
+2024-11-02,Chicken Biryani,193,109,153,True
+2024-11-03,Chicken Biryani,158,112,144,True
+2024-11-04,Chicken Biryani,98,99,126,True
+2024-11-05,Chicken Biryani,93,97,122,True
+2024-11-08,Chicken Biryani,186,124,152,True
+2024-11-09,Chicken Biryani,166,111,158,True
+2024-11-10,Chicken Biryani,117,118,142,True
+2024-11-12,Chicken Biryani,86,92,110,True
+2024-11-13,Chicken Biryani,123,100,122,True
+2024-11-15,Chicken Biryani,168,122,160,True
+2024-11-16,Chicken Biryani,165,110,157,True
+2024-11-22,Chicken Biryani,194,120,159,True
+2024-11-25,Chicken Biryani,119,99,110,True
+2024-11-28,Chicken Biryani,119,95,114,True
+2024-11-29,Chicken Biryani,192,124,154,True
+2024-12-03,Chicken Biryani,110,85,110,True
+2024-12-04,Chicken Biryani,94,98,122,True
+2024-12-05,Chicken Biryani,99,101,128,True
+2024-12-06,Chicken Biryani,151,124,142,True
+2024-12-14,Chicken Biryani,175,122,165,True
+2024-12-20,Chicken Biryani,176,126,166,True
+2024-12-25,Chicken Biryani,172,89,155,True
+2024-12-30,Chicken Biryani,120,95,112,True
+2024-12-31,Chicken Biryani,121,93,117,True
+2024-11-01,Grilled Fish,136,56,97,True
+2024-11-02,Grilled Fish,79,62,74,True
+2024-11-04,Grilled Fish,41,51,55,True
+2024-11-05,Grilled Fish,67,48,55,True
+2024-11-06,Grilled Fish,60,48,55,True
+2024-11-08,Grilled Fish,91,59,85,True
+2024-11-09,Grilled Fish,76,60,76,True
+2024-11-11,Grilled Fish,54,47,49,True
+2024-11-14,Grilled Fish,50,51,60,True
+2024-11-15,Grilled Fish,96,57,83,True
+2024-11-16,Grilled Fish,80,59,78,True
+2024-11-19,Grilled Fish,54,47,52,True
+2024-11-20,Grilled Fish,58,47,53,True
+2024-11-21,Grilled Fish,56,47,53,True
+2024-11-24,Grilled Fish,83,56,75,True
+2024-11-26,Grilled Fish,54,46,54,True
+2024-11-27,Grilled Fish,43,45,57,True
+2024-11-28,Grilled Fish,41,47,56,True
+2024-11-29,Grilled Fish,89,57,76,True
+2024-11-30,Grilled Fish,79,61,78,True
+2024-12-05,Grilled Fish,47,47,55,True
+2024-12-07,Grilled Fish,91,60,79,True
+2024-12-08,Grilled Fish,75,61,75,True
+2024-12-09,Grilled Fish,46,49,54,True
+2024-12-10,Grilled Fish,55,47,54,True
+2024-12-11,Grilled Fish,43,46,57,True
+2024-12-12,Grilled Fish,69,45,57,True
+2024-12-17,Grilled Fish,56,48,55,True
+2024-12-20,Grilled Fish,92,56,85,True
+2024-12-21,Grilled Fish,85,60,76,True
+2024-12-23,Grilled Fish,57,43,54,True
+2024-12-24,Grilled Fish,64,49,55,True
+2024-12-26,Grilled Fish,50,51,65,True
+2024-12-28,Grilled Fish,96,60,81,True
+2024-12-29,Grilled Fish,60,60,70,True
+2024-12-31,Grilled Fish,47,48,60,True
+2024-11-01,Masala Dosa,294,173,293,True
+2024-11-02,Masala Dosa,231,185,217,True
+2024-11-05,Masala Dosa,128,129,147,True
+2024-11-06,Masala Dosa,124,132,164,True
+2024-11-08,Masala Dosa,229,177,216,True
+2024-11-09,Masala Dosa,216,181,213,True
+2024-11-11,Masala Dosa,152,128,151,True
+2024-11-13,Masala Dosa,162,132,162,True
+2024-11-17,Masala Dosa,221,171,210,True
+2024-11-18,Masala Dosa,123,126,158,True
+2024-11-25,Masala Dosa,154,127,148,True
+2024-11-28,Masala Dosa,165,131,152,True
+2024-11-29,Masala Dosa,228,185,226,True
+2024-11-30,Masala Dosa,219,193,216,True
+2024-12-04,Masala Dosa,157,129,157,True
+2024-12-06,Masala Dosa,250,180,238,True
+2024-12-08,Masala Dosa,158,179,214,True
+2024-12-13,Masala Dosa,242,178,229,True
+2024-12-14,Masala Dosa,274,187,218,True
+2024-12-15,Masala Dosa,162,171,202,True
+2024-12-21,Masala Dosa,243,186,216,True
+2024-12-24,Masala Dosa,152,123,152,True
+2024-12-25,Masala Dosa,254,139,247,True
+2024-12-27,Masala Dosa,212,187,203,True
+2024-12-28,Masala Dosa,197,186,197,True
+2024-12-29,Masala Dosa,170,173,185,True
+2024-12-31,Masala Dosa,123,133,153,True
+2024-11-01,Paneer Butter Masala,215,86,120,True
+2024-11-02,Paneer Butter Masala,118,88,115,True
+2024-11-03,Paneer Butter Masala,104,83,101,True
+2024-11-04,Paneer Butter Masala,66,68,84,True
+2024-11-05,Paneer Butter Masala,68,69,86,True
+2024-11-06,Paneer Butter Masala,69,72,84,True
+2024-11-07,Paneer Butter Masala,80,67,74,True
+2024-11-09,Paneer Butter Masala,108,88,107,True
+2024-11-10,Paneer Butter Masala,71,84,104,True
+2024-11-12,Paneer Butter Masala,68,69,86,True
+2024-11-16,Paneer Butter Masala,118,86,109,True
+2024-11-22,Paneer Butter Masala,108,84,104,True
+2024-11-23,Paneer Butter Masala,110,85,105,True
+2024-11-24,Paneer Butter Masala,75,79,100,True
+2024-11-30,Paneer Butter Masala,107,85,107,True
+2024-12-01,Paneer Butter Masala,99,79,91,True
+2024-12-04,Paneer Butter Masala,64,65,77,True
+2024-12-05,Paneer Butter Masala,82,68,82,True
+2024-12-06,Paneer Butter Masala,109,86,108,True
+2024-12-07,Paneer Butter Masala,112,87,108,True
+2024-12-19,Paneer Butter Masala,61,68,81,True
+2024-12-20,Paneer Butter Masala,115,84,107,True
+2024-12-21,Paneer Butter Masala,114,86,111,True
+2024-12-22,Paneer Butter Masala,101,79,100,True
+2024-12-23,Paneer Butter Masala,61,65,84,True
+2024-12-26,Paneer Butter Masala,60,68,83,True
+2024-12-28,Paneer Butter Masala,109,84,108,True
+2024-12-31,Paneer Butter Masala,88,63,72,True
+2024-11-01,Veg Fried Rice,224,106,163,True
+2024-11-02,Veg Fried Rice,159,106,131,True
+2024-11-05,Veg Fried Rice,122,85,102,True
+2024-11-06,Veg Fried Rice,101,84,100,True
+2024-11-07,Veg Fried Rice,125,83,97,True
+2024-11-08,Veg Fried Rice,140,106,135,True
+2024-11-09,Veg Fried Rice,149,105,138,True
+2024-11-10,Veg Fried Rice,145,100,128,True
+2024-11-11,Veg Fried Rice,79,86,98,True
+2024-11-12,Veg Fried Rice,115,86,100,True
+2024-11-13,Veg Fried Rice,77,82,101,True
+2024-11-14,Veg Fried Rice,81,83,104,True
+2024-11-15,Veg Fried Rice,153,107,146,True
+2024-11-16,Veg Fried Rice,169,107,135,True
+2024-11-21,Veg Fried Rice,76,79,104,True
+2024-11-22,Veg Fried Rice,148,99,146,True
+2024-11-23,Veg Fried Rice,138,108,134,True
+2024-11-24,Veg Fried Rice,138,102,125,True
+2024-11-25,Veg Fried Rice,116,80,98,True
+2024-11-26,Veg Fried Rice,86,87,107,True
+2024-11-27,Veg Fried Rice,106,83,95,True
+2024-11-29,Veg Fried Rice,146,107,142,True
+2024-11-30,Veg Fried Rice,192,105,133,True
+2024-12-02,Veg Fried Rice,114,84,100,True
+2024-12-03,Veg Fried Rice,84,87,104,True
+2024-12-07,Veg Fried Rice,152,109,134,True
+2024-12-11,Veg Fried Rice,78,79,105,True
+2024-12-14,Veg Fried Rice,147,107,145,True
+2024-12-17,Veg Fried Rice,99,83,94,True
+2024-12-18,Veg Fried Rice,104,81,101,True
+2024-12-20,Veg Fried Rice,142,106,141,True
+2024-12-25,Veg Fried Rice,147,82,131,True
+2024-12-26,Veg Fried Rice,107,76,98,True
+2024-12-28,Veg Fried Rice,146,100,131,True
+2024-12-29,Veg Fried Rice,131,98,125,True
+2024-12-30,Veg Fried Rice,111,82,104,True
