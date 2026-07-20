@@ -1,6 +1,8 @@
+from importlib import metadata
 from pathlib import Path
 import pickle
 import warnings
+
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
@@ -16,11 +18,9 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 try:
-    from src.feature_engineering_v2 import engineer_features_v2, FEATURE_COLS_V2
-    from src.feature_engineering import sequential_split
+    from src.feature_engineering import engineer_features, FEATURE_COLS, sequential_split
 except ModuleNotFoundError:  # pragma: no cover
-    from feature_engineering_v2 import engineer_features_v2, FEATURE_COLS_V2
-    from feature_engineering import sequential_split
+    from feature_engineering import engineer_features, FEATURE_COLS, sequential_split
 
 
 def pinball_loss(y_true, y_pred, quantile):
@@ -29,18 +29,23 @@ def pinball_loss(y_true, y_pred, quantile):
 
 
 def build_quantile_models():
-    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
-    weather = pd.read_csv(BASE_DIR / "data" / "weather_real.csv", parse_dates=["date"])
-    events = pd.read_csv(BASE_DIR / "data" / "events_calendar.csv", parse_dates=["date"])
+    xgb_version = metadata.version("xgboost")
+    print(f"xgboost version: {xgb_version}")
 
+    df = pd.read_csv(DATA_PATH, parse_dates=["date"])
     rows = []
-    for item in df["menu_item"].unique():
-        feat_df = engineer_features_v2(df, item, weather=weather, events=events)
+
+    for item in sorted(df["menu_item"].unique()):
+        feat_df = engineer_features(df, item)
         train, test = sequential_split(feat_df, test_months=2)
-        X_train = train[FEATURE_COLS_V2]
+        X_train = train[FEATURE_COLS]
         y_train = train["units_sold"]
-        X_test = test[FEATURE_COLS_V2]
+        X_test = test[FEATURE_COLS]
         y_test = test["units_sold"]
+
+        model_by_quantile = {}
+        preds_by_quantile = {}
+        item_calibration = None
 
         for quantile in [0.1, 0.5, 0.9]:
             model = XGBRegressor(
@@ -56,30 +61,32 @@ def build_quantile_models():
             )
             model.fit(X_train, y_train)
             preds = model.predict(X_test).clip(min=0)
-            loss = pinball_loss(y_test, preds, quantile)
-            rows.append({
-                "menu_item": item,
-                "quantile": quantile,
-                "pinball_loss": round(float(loss), 4),
-                "mae": round(float(mean_absolute_error(y_test, preds)), 3),
-            })
+            model_by_quantile[quantile] = model
+            preds_by_quantile[quantile] = preds
 
             item_key = item.replace(" ", "_")
             quantile_suffix = {0.1: "q10", 0.5: "q50", 0.9: "q90"}[quantile]
             with open(MODEL_DIR / f"{item_key}_{quantile_suffix}.pkl", "wb") as fh:
                 pickle.dump(model, fh)
 
-        item_key = item.replace(" ", "_")
-        p90_model_path = MODEL_DIR / f"{item_key}_q90.pkl"
-        p50_model_path = MODEL_DIR / f"{item_key}_q50.pkl"
-        if p90_model_path.exists() and p50_model_path.exists():
-            with open(p90_model_path, "rb") as fh:
-                p90_model = pickle.load(fh)
-            with open(p50_model_path, "rb") as fh:
-                p50_model = pickle.load(fh)
-            p90_pred = p90_model.predict(X_test).clip(min=0)
-            calibration = np.mean(y_test.values < p90_pred) * 100
-            print(f"{item}: P90 calibration = {calibration:.1f}% of actuals below P90")
+        p90_pred = preds_by_quantile[0.9]
+        item_calibration = np.mean(y_test.values < p90_pred) * 100
+
+        for quantile in [0.1, 0.5, 0.9]:
+            preds = preds_by_quantile[quantile]
+            mae = mean_absolute_error(y_test, preds)
+            pinball = pinball_loss(y_test, preds, quantile)
+            rows.append(
+                {
+                    "menu_item": item,
+                    "quantile": quantile,
+                    "pinball_loss": round(float(pinball), 4),
+                    "mae": round(float(mae), 3),
+                    "calibration_pct": round(float(item_calibration), 2),
+                }
+            )
+
+        print(f"{item}: P50 MAE = {mae:.2f} | {item_calibration:.1f}% of actuals below P90")
 
     metrics_df = pd.DataFrame(rows)
     metrics_df.to_csv(OUTPUT_DIR / "quantile_metrics.csv", index=False)

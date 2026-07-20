@@ -4,10 +4,10 @@ Generates synthetic restaurant POS sales data for demand forecasting.
 Simulates realistic patterns: weekday/weekend spikes, seasonality, holidays, trends.
 """
 
+import math
 from pathlib import Path
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 DATA_PATH = BASE_DIR / "data" / "pos_sales_raw.csv"
@@ -16,7 +16,8 @@ def generate_pos_data(
     start_date="2023-01-01",
     end_date="2024-12-31",
     menu_items=None,
-    seed=42
+    seed=42,
+    target_rows=150_000,
 ):
     """
     Generate synthetic daily POS sales data for multiple menu items.
@@ -36,6 +37,12 @@ def generate_pos_data(
         }
 
     dates = pd.date_range(start=start_date, end=end_date, freq="D")
+    if target_rows is not None and target_rows > 0:
+        num_items = len(menu_items)
+        target_days = max(1, math.ceil(target_rows / num_items))
+        if len(dates) < target_days:
+            end_date = (pd.Timestamp(start_date) + pd.DateOffset(days=target_days - 1)).strftime("%Y-%m-%d")
+            dates = pd.date_range(start=start_date, end=end_date, freq="D")
 
     # Indian holidays (approximate)
     holidays = set(pd.to_datetime([
@@ -105,6 +112,55 @@ def generate_pos_data(
     df = pd.DataFrame(records)
     df["date"] = pd.to_datetime(df["date"])
     df = df.sort_values(["menu_item", "date"]).reset_index(drop=True)
+
+    if target_rows is not None and target_rows > 0:
+        if len(df) < target_rows:
+            extra_rows = target_rows - len(df)
+            extra_dates = pd.date_range(start=dates[-1] + pd.Timedelta(days=1), periods=extra_rows // len(menu_items) + 1, freq="D")
+            for item_name, config in menu_items.items():
+                for date in extra_dates:
+                    if len(df) >= target_rows:
+                        break
+                    base = config["base"]
+                    price = config["price"]
+                    weekday = date.dayofweek
+                    if weekday in [4, 5]:
+                        weekly_factor = np.random.uniform(1.3, 1.6)
+                    elif weekday == 6:
+                        weekly_factor = np.random.uniform(1.15, 1.35)
+                    else:
+                        weekly_factor = np.random.uniform(0.85, 1.05)
+                    month = date.month
+                    if month in [10, 11, 12]:
+                        seasonal_factor = np.random.uniform(1.15, 1.3)
+                    elif month in [5, 6]:
+                        seasonal_factor = np.random.uniform(0.8, 0.95)
+                    elif month in [1, 3, 4]:
+                        seasonal_factor = np.random.uniform(1.05, 1.2)
+                    else:
+                        seasonal_factor = np.random.uniform(0.95, 1.1)
+                    holiday_factor = np.random.uniform(1.4, 1.8) if date in holidays else 1.0
+                    noise = np.random.normal(1.0, 0.08)
+                    units = int(base * weekly_factor * seasonal_factor * holiday_factor * noise)
+                    units = max(units, 0)
+                    revenue = round(units * price * np.random.uniform(0.97, 1.03), 2)
+                    df.loc[len(df)] = {
+                        "date": date,
+                        "menu_item": item_name,
+                        "units_sold": units,
+                        "revenue": revenue,
+                        "price_per_unit": price,
+                        "is_holiday": date in holidays,
+                        "day_of_week": date.dayofweek,
+                        "day_name": date.strftime("%A"),
+                        "month": date.month,
+                        "week_of_year": date.isocalendar().week,
+                        "is_weekend": weekday >= 5,
+                    }
+                    if len(df) >= target_rows:
+                        break
+            df = df.sort_values(["menu_item", "date"]).reset_index(drop=True)
+
     return df
 
 
